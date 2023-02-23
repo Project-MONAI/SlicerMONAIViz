@@ -1,1 +1,1 @@
-# SlicerMONAITransforms
+# SlicerMONAIViz
