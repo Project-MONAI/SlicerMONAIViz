@@ -11,7 +11,7 @@
 import importlib
 import inspect
 import os
-import sys
+from typing import Any
 
 
 def is_subclass(n, o, base_c):
@@ -22,9 +22,9 @@ def is_subclass(n, o, base_c):
     return False
 
 
-def get_class_of_subclass(module, base_classes) -> dict:
+def get_class_of_subclass(module, base_classes) -> dict[str, Any]:
     print(f"{module} => {base_classes}")
-    res = dict()
+    res: dict[str, Any] = {}
     for n, o in inspect.getmembers(module):
         if not inspect.isclass(o) or inspect.isabstract(o):
             continue
@@ -47,7 +47,7 @@ def get_class_of_subclass(module, base_classes) -> dict:
                     }
                 break
 
-    sorted_d = dict()
+    sorted_d: dict[str, Any] = {}
     for k in sorted(res.keys()):
         v = res[k]
         v["alias"] = sorted(v["alias"])
@@ -119,6 +119,7 @@ class MonaiUtils:
         return d
 
 
+"""
 def main():
     transforms = MonaiUtils.list_transforms()
 
@@ -169,3 +170,4 @@ if __name__ == "__main__":
     # pip_install("monai")
     # pip_install("nibabel")
     main()
+"""

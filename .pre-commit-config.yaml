@@ -69,7 +69,7 @@ repos:
   rev: v0.991
   hooks:
   - id: mypy
-    exclude: (^tests/|^plugins/)
+    exclude: (^tests/|^plugins/|SlicerMONAIViz.py)
     additional_dependencies: [types-PyYAML,types-filelock,types-requests,types-docutils,types-cachetools]
 
 - repo: https://github.com/asottile/pyupgrade

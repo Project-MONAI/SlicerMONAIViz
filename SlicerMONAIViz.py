@@ -19,9 +19,10 @@ import qt
 import requests
 import slicer
 import vtk
-from SlicerMONAIVizLib import MonaiUtils
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
+
+from SlicerMONAIVizLib import MonaiUtils
 
 
 class SlicerMONAIViz(ScriptedLoadableModule):
@@ -91,9 +92,7 @@ class _ui_SlicerMONAIVizSettingsPanel:
         bufferArgs.setText("15")
         bufferArgs.toolTip = "Buffer/Extra Args for each Transform while adding/editing"
         groupLayout.addRow("Buffer Args:", bufferArgs)
-        parent.registerProperty(
-            "SlicerMONAIViz/bufferArgs", bufferArgs, "text", str(qt.SIGNAL("textChanged(QString)"))
-        )
+        parent.registerProperty("SlicerMONAIViz/bufferArgs", bufferArgs, "text", str(qt.SIGNAL("textChanged(QString)")))
 
         vBoxLayout.addWidget(groupBox)
         vBoxLayout.addStretch(1)
