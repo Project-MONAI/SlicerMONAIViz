@@ -262,9 +262,8 @@ class SlicerMONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         if not version:
             slicer.util.errorDisplay(
                 "MONAI is not installed.\n"
-                "Open Python Console (from View Menu) and run following commands.\n\n"
-                "1. pip_install('monai')\n"
-                "2. pip_install('nibabel')\n\n"
+                "Open Python Console (from View Menu) and run following command:.\n\n"
+                'pip_install("monai[itk,nibabel]")\n\n'
                 "Restart 3D Slicer after installing above packages."
             )
             return
@@ -561,15 +560,17 @@ class SlicerMONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             volumeNode.SetName(os.path.basename(self.ui.imagePathLineEdit.currentPath))
             volumeNode.SetOrigin(origin)
             volumeNode.SetSpacing(spacing)
-            # volumeNode.SetIJKToRASDirections(direction)
+            volumeNode.SetIJKToRASDirections(direction)
 
             l = self.ctx.get_tensor(key=label_key)
             labelNode = None
             if l is not None:
                 labelNode = slicer.util.addVolumeFromArray(l, nodeClassName="vtkMRMLLabelMapVolumeNode")
+                origin, spacing, direction = self.ctx.get_tensor_osd(key=label_key)
                 labelNode.SetName(os.path.basename(self.ui.labelPathLineEdit.currentPath))
                 labelNode.SetOrigin(origin)
                 labelNode.SetSpacing(spacing)
+                labelNode.SetIJKToRASDirections(direction)
             slicer.util.setSliceViewerLayers(volumeNode, label=labelNode, fit=True)
 
             self.ctx.set_next(next_idx, next_exp)
