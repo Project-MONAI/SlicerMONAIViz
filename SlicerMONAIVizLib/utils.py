@@ -13,48 +13,86 @@ import inspect
 import os
 from typing import Any
 
+class ClassUtils:
+    @staticmethod
+    def is_subclass(n, o, base_c):
+        if inspect.isclass(o) and n != base_c:
+            b = [cls.__name__ for cls in o.__bases__]
+            if base_c in b:
+                return True
+        return False
 
-def is_subclass(n, o, base_c):
-    if inspect.isclass(o) and n != base_c:
-        b = [cls.__name__ for cls in o.__bases__]
-        if base_c in b:
-            return True
-    return False
+    @staticmethod
+    def get_class_of_subclass(module, base_classes) -> dict[str, Any]:
+        print(f"{module} => {base_classes}")
+        res: dict[str, Any] = {}
+        for n, o in inspect.getmembers(module):
+            if not inspect.isclass(o) or inspect.isabstract(o):
+                continue
 
+            # print(f"{n} => {o}")
+            for base_c in base_classes:
+                if ClassUtils.is_subclass(n, o, base_c):
+                    cp = f"{o.__module__}.{o.__name__}"
+                    if res.get(cp):
+                        res[cp]["alias"].append(n)
+                    else:
+                        res[cp] = {
+                            "name": o.__name__,
+                            "alias": [n],
+                            "class": cp,
+                            "module": o.__module__,
+                            "dictionary": o.__module__.endswith("dictionary"),
+                            "base_class": base_c,
+                            "category": ".".join(o.__module__.split(".")[:3]),
+                        }
+                    break
 
-def get_class_of_subclass(module, base_classes) -> dict[str, Any]:
-    print(f"{module} => {base_classes}")
-    res: dict[str, Any] = {}
-    for n, o in inspect.getmembers(module):
-        if not inspect.isclass(o) or inspect.isabstract(o):
-            continue
+        sorted_d: dict[str, Any] = {}
+        for k in sorted(res.keys()):
+            v = res[k]
+            v["alias"] = sorted(v["alias"])
+            sorted_d[k] = v
 
-        # print(f"{n} => {o}")
-        for base_c in base_classes:
-            if is_subclass(n, o, base_c):
-                cp = f"{o.__module__}.{o.__name__}"
-                if res.get(cp):
-                    res[cp]["alias"].append(n)
+        return sorted_d
+
+    @staticmethod
+    def args_to_expression(class_args):
+        key_val = []
+        for key in class_args:
+            val = class_args[key]
+            if isinstance(val, str):
+                val = "'" + val + "'"
+            elif isinstance(val, tuple) or isinstance(val, list):
+                vals = []
+                for v in val:
+                    if isinstance(v, str):
+                        v = "'" + v + "'"
+                    else:
+                        v = str(v)
+                    vals.append(v)
+                if isinstance(val, tuple):
+                    val = "(" + ", ".join(vals) + ")"
                 else:
-                    res[cp] = {
-                        "name": o.__name__,
-                        "alias": [n],
-                        "class": cp,
-                        "module": o.__module__,
-                        "dictionary": o.__module__.endswith("dictionary"),
-                        "base_class": base_c,
-                        "category": ".".join(o.__module__.split(".")[:3]),
-                    }
-                break
+                    val = "[" + ", ".join(vals) + "]"
+            else:
+                val = str(val)
+            key_val.append(f"{key}={val}")
+        return ", ".join(key_val)
 
-    sorted_d: dict[str, Any] = {}
-    for k in sorted(res.keys()):
-        v = res[k]
-        v["alias"] = sorted(v["alias"])
-        sorted_d[k] = v
+    @staticmethod
+    def expression_to_args(exp, handle_bool=True):
+        if not exp:
+            return {}
 
-    return sorted_d
+        if handle_bool:
+            exp = exp.replace("=true", "=True").replace("=false", "=False")  # safe to assume
+            exp = exp.replace(" true", " True").replace(" false", " False")
 
+        def foo(**kwargs):
+            return kwargs
+
+        return eval("foo(" + exp + ")")
 
 class MonaiUtils:
     @staticmethod
@@ -69,7 +107,7 @@ class MonaiUtils:
     @staticmethod
     def list_transforms(module="monai.transforms"):
         mt = importlib.import_module(module)
-        return get_class_of_subclass(mt, ["Transform", "MapTransform"])
+        return ClassUtils.get_class_of_subclass(mt, ["Transform", "MapTransform"])
 
     @staticmethod
     def list_bundles():

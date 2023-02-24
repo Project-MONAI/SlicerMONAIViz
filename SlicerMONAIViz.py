@@ -22,7 +22,7 @@ import vtk
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 
-from SlicerMONAIVizLib import MonaiUtils
+from SlicerMONAIVizLib import MonaiUtils, args_to_expression, expression_to_args
 
 
 class SlicerMONAIViz(ScriptedLoadableModule):
@@ -277,41 +277,6 @@ class SlicerMONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.modulesComboBox.setCurrentIndex(idx)
         # self.onSelectModule(self.ui.modulesComboBox.currentText)
 
-    def args_to_expression(self, class_args):
-        key_val = []
-        for key in class_args:
-            val = class_args[key]
-            if isinstance(val, str):
-                val = "'" + val + "'"
-            elif isinstance(val, tuple) or isinstance(val, list):
-                vals = []
-                for v in val:
-                    if isinstance(v, str):
-                        v = "'" + v + "'"
-                    else:
-                        v = str(v)
-                    vals.append(v)
-                if isinstance(val, tuple):
-                    val = "(" + ", ".join(vals) + ")"
-                else:
-                    val = "[" + ", ".join(vals) + "]"
-            else:
-                val = str(val)
-            key_val.append(f"{key}={val}")
-        return ", ".join(key_val)
-
-    def expression_to_args(self, exp, handle_bool=True):
-        if not exp:
-            return {}
-
-        if handle_bool:
-            exp = exp.replace("=true", "=True").replace("=false", "=False")  # safe to assume
-            exp = exp.replace(" true", " True").replace(" false", " False")
-
-        def foo(**kwargs):
-            return kwargs
-
-        return eval("foo(" + exp + ")")
 
     def onImportBundle(self):
         if not self.ui.monaiVersionComboBox.currentText:
@@ -345,7 +310,7 @@ class SlicerMONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             table.setItem(pos, 0, item)
 
             table.setItem(pos, 1, qt.QTableWidgetItem(name))
-            table.setItem(pos, 2, qt.QTableWidgetItem(self.args_to_expression(args)))
+            table.setItem(pos, 2, qt.QTableWidgetItem(args_to_expression(args)))
 
     def onSelectModule(self):
         module = self.ui.modulesComboBox.currentText
@@ -416,12 +381,12 @@ class SlicerMONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                 fp.write(f'<p>Visit <a href="{doc_url}">MONAI Docs</a> for more information</p>')
 
         buffer_rows = int(slicer.util.settingsValue("SlicerMONAIViz/bufferArgs", "15"))
-        dlg = CustomDialog(self.resourcePath, name, self.expression_to_args(exp), doc_section, buffer_rows)
+        dlg = CustomDialog(self.resourcePath, name, expression_to_args(exp), doc_section, buffer_rows)
         dlg.exec()
         os.unlink(doc_section)
 
         if dlg.updatedArgs is not None:
-            new_exp = self.args_to_expression(dlg.updatedArgs)
+            new_exp = args_to_expression(dlg.updatedArgs)
             print(f"Old:: {exp}")
             print(f"New:: {new_exp}")
             if exp != new_exp:
