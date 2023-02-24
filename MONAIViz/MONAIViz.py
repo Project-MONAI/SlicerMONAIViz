@@ -435,7 +435,16 @@ class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         t = self.ui.transformsComboBox.currentText
         m = self.ui.modulesComboBox.currentText
-        self.addTransform(-1, None, t, None)
+
+        v = ""
+        if t[-1] == "d":  # this is a dictionary transform
+            # now exclude some transforms whose name happens to end with d
+            if t not in ["AffineGrid", "Decollated", "RandAffineGrid", "RandDeformGrid"]:
+                image_key = slicer.util.settingsValue("SlicerMONAIViz/imageKey", "image")
+                label_key = slicer.util.settingsValue("SlicerMONAIViz/labelKey", "label")
+                v = f"keys=['{image_key}', '{label_key}']"
+
+        self.addTransform(-1, None, t, v)
 
     def addTransform(self, pos, m, t, v):
         table = self.ui.transformTable
