@@ -2,11 +2,12 @@
 
 ## MONAI Developer Plugin for 3D Slicer
 
-- You can import pre-transform definisions for available bundle from MONAI ZOO
-- You can add/remove/re-order any MONAI transform to the list
-- You can run each transform step-by-step over sample image/label
-- You can visualize image/label output for every transform run
-- You can check the data/dictionary dump for every transform run
+SlicerMONAIViz currently supports:
+- import pre-processing definitions for available bundles from MONAI model zoo
+- add/remove/re-order any MONAI transform to the list of transforms
+- apply a sequence of transforms step-by-step over input image/label
+- visualize image/label outputs for every transform run
+- check the data/dictionary stats for every transform run
 
 <hr/>
 
