@@ -12,7 +12,9 @@ import copy
 import json
 import logging
 import os
+import pprint
 import tempfile
+from io import StringIO
 
 import ctk
 import qt
@@ -22,7 +24,7 @@ import vtk
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 
-from SlicerMONAIVizLib import MonaiUtils, args_to_expression, expression_to_args
+from SlicerMONAIVizLib import ClassUtils, MonaiUtils
 
 
 class SlicerMONAIViz(ScriptedLoadableModule):
@@ -58,6 +60,14 @@ class _ui_SlicerMONAIVizSettingsPanel:
         groupBox = ctk.ctkCollapsibleGroupBox()
         groupBox.title = "MONAIViz"
         groupLayout = qt.QFormLayout(groupBox)
+
+        bundleAuthToken = qt.QLineEdit()
+        bundleAuthToken.setText("")
+        bundleAuthToken.toolTip = "Auth Token for bundles to download from MONAI Model Zoo"
+        groupLayout.addRow("Bundle Auth Token:", bundleAuthToken)
+        parent.registerProperty(
+            "SlicerMONAIViz/bundleAuthToken", bundleAuthToken, "text", str(qt.SIGNAL("textChanged(QString)"))
+        )
 
         transformsPath = qt.QLineEdit()
         transformsPath.setText("monai.transforms")
@@ -119,7 +129,8 @@ class SlicerMONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self._parameterNode = None
         self._updatingGUIFromParameterNode = False
         self.transforms = None
-        self.tmpdir = slicer.util.tempDirectory("slicer-monai-transforms", includeDateTime=False)
+        self.tmpdir = slicer.util.tempDirectory("slicer-monai-viz", includeDateTime=False)
+        print(f"Using Temp Directory: {self.tmpdir}")
 
         self.ctx = TransformCtx()
 
@@ -148,6 +159,7 @@ class SlicerMONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.importBundleButton.connect("clicked(bool)", self.onImportBundle)
         self.ui.runTransformButton.connect("clicked(bool)", self.onRunTransform)
         self.ui.clearTransformButton.connect("clicked(bool)", self.onClearTransform)
+        self.ui.previewTransformButton.connect("clicked(bool)", self.onShowDictionary)
 
         # Make sure parameter node is initialized (needed for module reload)
         self.initializeParameterNode()
@@ -244,15 +256,29 @@ class SlicerMONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     def refreshVersion(self):
         print("Refreshing Version...")
+
         self.ui.monaiVersionComboBox.clear()
         version = MonaiUtils.version()
+        if not version:
+            slicer.util.errorDisplay(
+                "MONAI is not installed.\n"
+                "Open Python Console (from View Menu) and run following commands.\n\n"
+                "1. pip_install('monai')\n"
+                "2. pip_install('nibabel')\n\n"
+                "Restart 3D Slicer after installing above packages."
+            )
+            return
+
         self.ui.monaiVersionComboBox.addItem(version)
         self.ui.monaiVersionComboBox.setCurrentText(version)
 
         self.refreshTransforms()
 
         # bundle names
-        bundles = MonaiUtils.list_bundles()
+        auth_token = slicer.util.settingsValue("SlicerMONAIViz/bundleAuthToken", "")
+        auth_token = auth_token if auth_token else None
+        bundles = MonaiUtils.list_bundles(auth_token=auth_token)
+
         self.ui.bundlesComboBox.clear()
         self.ui.bundlesComboBox.addItems(list(sorted({b[0] for b in bundles})))
         idx = max(0, self.ui.bundlesComboBox.findText("spleen_ct_segmentation"))
@@ -285,8 +311,20 @@ class SlicerMONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         bundle_dir = os.path.join(self.tmpdir, "bundle")
         this_bundle = os.path.join(bundle_dir, name)
         if not os.path.exists(this_bundle):
-            print(f"Downloading {name} to {bundle_dir}")
-            MonaiUtils.download_bundle(name, bundle_dir)
+            if not slicer.util.confirmOkCancelDisplay(
+                f"This will download bundle: {name} from MONAI ZOO.\n\nAre you sure to continue?"
+            ):
+                return
+
+            try:
+                qt.QApplication.setOverrideCursor(qt.Qt.WaitCursor)
+
+                print(f"Downloading {name} to {bundle_dir}")
+                auth_token = slicer.util.settingsValue("SlicerMONAIViz/bundleAuthToken", "")
+                auth_token = auth_token if auth_token else None
+                MonaiUtils.download_bundle(name, bundle_dir, auth_token=auth_token)
+            finally:
+                qt.QApplication.restoreOverrideCursor()
 
         transforms = MonaiUtils.transforms_from_bundle(name, bundle_dir)
 
@@ -309,7 +347,7 @@ class SlicerMONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             table.setItem(pos, 0, item)
 
             table.setItem(pos, 1, qt.QTableWidgetItem(name))
-            table.setItem(pos, 2, qt.QTableWidgetItem(args_to_expression(args)))
+            table.setItem(pos, 2, qt.QTableWidgetItem(ClassUtils.args_to_expression(args)))
 
     def onSelectModule(self):
         module = self.ui.modulesComboBox.currentText
@@ -380,16 +418,16 @@ class SlicerMONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                 fp.write(f'<p>Visit <a href="{doc_url}">MONAI Docs</a> for more information</p>')
 
         buffer_rows = int(slicer.util.settingsValue("SlicerMONAIViz/bufferArgs", "15"))
-        dlg = CustomDialog(self.resourcePath, name, expression_to_args(exp), doc_section, buffer_rows)
+        dlg = CustomDialog(self.resourcePath, name, ClassUtils.expression_to_args(exp), doc_section, buffer_rows)
         dlg.exec()
         os.unlink(doc_section)
 
         if dlg.updatedArgs is not None:
-            new_exp = args_to_expression(dlg.updatedArgs)
+            new_exp = ClassUtils.args_to_expression(dlg.updatedArgs)
             print(f"Old:: {exp}")
             print(f"New:: {new_exp}")
             if exp != new_exp:
-                if row < self.ctx.next_t or row == self.ui.transformTable.rowCount - 1:
+                if row < self.ctx.next_idx or row == self.ui.transformTable.rowCount - 1:
                     self.onClearTransform()
                 self.ui.transformTable.item(row, 2).setText(new_exp)
                 print("Updated for new args...")
@@ -446,7 +484,29 @@ class SlicerMONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.onRemoveTransform()
         self.addTransform(row + 1, None, t, v)
 
+    def prepare_dict(self):
+        image = self.ui.imagePathLineEdit.currentPath
+        label = self.ui.labelPathLineEdit.currentPath
+        additional = json.loads(self.ui.textEdit.toPlainText())
+
+        image_key = slicer.util.settingsValue("SlicerMONAIViz/imageKey", "image")
+        label_key = slicer.util.settingsValue("SlicerMONAIViz/labelKey", "label")
+
+        d = {image_key: image, **additional}
+        if label:
+            d[label_key] = label
+        return d
+
+    def get_exp(self, row):
+        name = str(self.ui.transformTable.item(row, 1).text())
+        args = str(self.ui.transformTable.item(row, 2).text())
+        return f"monai.transforms.{name}({args})"
+
     def onRunTransform(self):
+        if not self.ui.imagePathLineEdit.currentPath:
+            slicer.util.errorDisplay("Image is not selected!")
+            return
+
         current_row = self.ui.transformTable.currentRow()
         print(f"Current Row: {current_row}; Total: {self.ui.transformTable.rowCount}")
         if current_row < 0:
@@ -460,64 +520,59 @@ class SlicerMONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             # Temporary:: clear current scene
             slicer.mrmlScene.Clear(0)
 
-            image = self.ui.imagePathLineEdit.currentPath
-            label = self.ui.labelPathLineEdit.currentPath
-            additional = json.loads(self.ui.textEdit.toPlainText())
-
-            current_name = str(self.ui.transformTable.item(current_row, 1).text())
-            d = {image_key: image, label_key: label, **additional}
-            d = self.ctx.get_d(name=current_name, d=d)
+            current_exp = self.get_exp(current_row)
+            d = self.ctx.get_d(current_exp, d=self.prepare_dict())
 
             import monai
 
             print(monai.__version__)
 
-            if self.ctx.last_tname != current_name:
-                for row in range(self.ctx.next_t, current_row + 1):
-                    name = str(self.ui.transformTable.item(row, 1).text())
-                    args = str(self.ui.transformTable.item(row, 2).text())
-
-                    exp = f"monai.transforms.{name}({args})"
+            if self.ctx.last_exp != current_exp:
+                for row in range(self.ctx.next_idx, current_row + 1):
+                    exp = self.get_exp(row)
                     print("")
                     print("====================================================================")
                     print(f"Run:: {exp}")
                     print("====================================================================")
 
                     t = eval(exp)
-                    d = t(d)
-                    self.ctx.set_d(d, name, keys=(image_key, label_key))
+                    if isinstance(d, list):
+                        d = [t(dx) for dx in d]  # Batched Transforms
+                    else:
+                        d = t(d)
+
+                    self.ctx.set_d(d, exp, key=image_key)
                     self.ui.transformTable.item(row, 0).setIcon(self.icon("icons8-green-circle-48.png"))
 
-            next_t = current_row
-            next_tname = str(self.ui.transformTable.item(next_t, 1).text())
+            next_idx = current_row
+            next_exp = self.get_exp(next_idx)
             if current_row + 1 < self.ui.transformTable.rowCount:
-                next_t = current_row + 1
-                next_tname = str(self.ui.transformTable.item(next_t, 1).text())
+                next_idx = current_row + 1
+                next_exp = self.get_exp(next_idx)
 
-                self.ui.transformTable.selectRow(next_t)
-                for row in range(next_t, self.ui.transformTable.rowCount):
+                self.ui.transformTable.selectRow(next_idx)
+                for row in range(next_idx, self.ui.transformTable.rowCount):
                     self.ui.transformTable.item(row, 0).setIcon(self.icon("icons8-yellow-circle-48.png"))
 
             v = self.ctx.get_tensor(key=image_key)
             volumeNode = slicer.util.addVolumeFromArray(v)
 
-            l = self.ctx.get_tensor(key=label_key)
-            labelNode = slicer.util.addVolumeFromArray(l, nodeClassName="vtkMRMLLabelMapVolumeNode")
-
             origin, spacing, direction = self.ctx.get_tensor_osd(key=image_key)
+            volumeNode.SetName(os.path.basename(self.ui.imagePathLineEdit.currentPath))
             volumeNode.SetOrigin(origin)
             volumeNode.SetSpacing(spacing)
             # volumeNode.SetIJKToRASDirections(direction)
 
-            labelNode.SetOrigin(origin)
-            labelNode.SetSpacing(spacing)
+            l = self.ctx.get_tensor(key=label_key)
+            labelNode = None
+            if l is not None:
+                labelNode = slicer.util.addVolumeFromArray(l, nodeClassName="vtkMRMLLabelMapVolumeNode")
+                labelNode.SetName(os.path.basename(self.ui.labelPathLineEdit.currentPath))
+                labelNode.SetOrigin(origin)
+                labelNode.SetSpacing(spacing)
             slicer.util.setSliceViewerLayers(volumeNode, label=labelNode, fit=True)
 
-            # segmentNode.CreateClosedSurfaceRepresentation()
-            # view = slicer.app.layoutManager().threeDWidget(0).threeDView()
-            # view.resetFocalPoint()
-
-            self.ctx.set_next(next_t, next_tname)
+            self.ctx.set_next(next_idx, next_exp)
             self.ui.clearTransformButton.setEnabled(self.ctx.valid())
         finally:
             qt.QApplication.restoreOverrideCursor()
@@ -528,8 +583,9 @@ class SlicerMONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             self.ui.transformTable.item(row, 0).setIcon(self.icon("icons8-yellow-circle-48.png"))
         self.ui.clearTransformButton.setEnabled(self.ctx.valid())
 
-    def onApply(self):
-        pass
+    def onShowDictionary(self):
+        dlg = TransformDictDialog(self.ctx.get_d(None, d=self.prepare_dict()), self.resourcePath)
+        dlg.exec()
 
 
 class EditButtonsWidget(qt.QWidget):
@@ -622,6 +678,56 @@ class CustomDialog(qt.QDialog):
         self.close()
 
 
+class TransformDictDialog(qt.QDialog):
+    def __init__(self, data, resourcePath):
+        super().__init__()
+
+        self.setWindowTitle("Dictionary Data")
+        print(f"{data.keys()}")
+
+        layout = qt.QVBoxLayout()
+        uiWidget = slicer.util.loadUI(resourcePath("UI/MONAIDictionaryDialog.ui"))
+        layout.addWidget(uiWidget)
+
+        self.ui = slicer.util.childWidgetVariables(uiWidget)
+        self.setLayout(layout)
+
+        s = StringIO()
+        pprint.pprint(data, s, indent=2)
+        self.ui.dataTextEdit.setPlainText(s.getvalue())
+
+        headers = ["Key", "Type", "Shape", "Value"]
+        tree = self.ui.treeWidget
+        tree.setColumnCount(len(headers))
+        tree.setHeaderLabels(headers)
+        tree.setColumnWidth(0, 150)
+        tree.setColumnWidth(1, 75)
+        tree.setColumnWidth(2, 100)
+
+        def get_val(v):
+            if type(v) in (int, float, bool, str):
+                return str(v)
+
+            s = StringIO()
+            pprint.pprint(v, s, compact=True, indent=1, width=-1)
+            return s.getvalue().replace("\n", "")
+
+        items = []
+        for key, val in data.items():
+            if isinstance(val, dict):
+                item = qt.QTreeWidgetItem([key])
+                for k1, v1 in val.items():
+                    tvals = [k1, type(v1).__name__, v1.shape if hasattr(v1, "shape") else "", get_val(v1)]
+                    child = qt.QTreeWidgetItem(tvals)
+                    item.addChild(child)
+            else:
+                tvals = [key, type(val).__name__, val.shape if hasattr(val, "shape") else "", get_val(val)]
+                item = qt.QTreeWidgetItem(tvals)
+            items.append(item)
+
+        tree.insertTopLevelItems(0, items)
+
+
 class SlicerMONAIVizLogic(ScriptedLoadableModuleLogic):
     def __init__(self):
         ScriptedLoadableModuleLogic.__init__(self)
@@ -657,9 +763,9 @@ class SlicerMONAIVizTest(ScriptedLoadableModuleTest):
 class TransformCtx:
     def __init__(self):
         self.d = None
-        self.last_tname = ""
-        self.next_t = 0
-        self.next_tname = ""
+        self.last_exp = ""
+        self.next_idx = 0
+        self.next_exp = ""
         self.channel = False
         self.bidx = 0
         self.original_spatial_shape = None
@@ -669,13 +775,19 @@ class TransformCtx:
         self.__init__()
 
     def valid(self) -> bool:
-        return False if self.d is None or self.next_t == 0 else True
+        return False if self.d is None or self.next_idx == 0 else True
 
-    def valid_for_next(self, name) -> bool:
-        return True if name and self.next_tname and name == self.next_tname else False
+    def valid_for_next(self, exp) -> bool:
+        return True if exp and self.next_exp and exp == self.next_exp else False
 
-    def get_d(self, name=None, d=None):
-        if not self.valid_for_next(name):
+    def get_d(self, exp, d=None):
+        if exp is None:
+            if self.valid():
+                bidx = self.bidx % len(self.d) if isinstance(self.d, list) else -1
+                return self.d[bidx] if bidx >= 0 else self.d
+            return d
+
+        if not self.valid_for_next(exp):
             self.reset()
 
         if not self.valid():
@@ -683,34 +795,41 @@ class TransformCtx:
             return d
         return self.d
 
-    def set_d(self, d, name, keys):
-        for key in keys:
-            key_tensor = d[self.bidx % len(d)][key] if isinstance(d, list) else d[key]
-            print(f"{key}: {key_tensor.shape}")
+    def set_d(self, d, exp, key):
+        key_tensor = d[self.bidx % len(d)][key] if isinstance(d, list) else d[key]
+        print(f"{key}: {key_tensor.shape}")
 
-            if self.original_spatial_shape is None:
-                self.original_spatial_shape = key_tensor.shape
-                self.original_affine = key_tensor.affine.numpy()
+        if self.original_spatial_shape is None:
+            self.original_spatial_shape = key_tensor.shape
+            self.original_affine = key_tensor.affine.numpy()
 
-        if name == "EnsureChannelFirstd":
+        if "EnsureChannelFirstd" in exp:
             self.channel = True
 
         self.d = d
-        self.last_tname = name
+        self.last_exp = exp
 
-    def set_next(self, next_t, next_tname):
-        if self.next_t == next_t and self.next_tname == next_tname:
+    def set_next(self, next_idx, next_exp):
+        if self.next_idx == next_idx and self.next_exp == next_exp:
             self.bidx += 1
         else:
-            self.next_t = next_t
-            self.next_tname = next_tname
+            self.next_idx = next_idx
+            self.next_exp = next_exp
 
     def get_tensor(self, key, transpose=True):
         import numpy as np
+        import torch
 
         bidx = self.bidx % len(self.d) if isinstance(self.d, list) else -1
-        key_tensor = self.d[bidx][key] if bidx >= 0 else self.d[key]
-        v = key_tensor.array
+        d = self.d[bidx] if bidx >= 0 else self.d
+        if d.get(key) is None:
+            return None
+
+        key_tensor = d[key]
+        if isinstance(key_tensor, str) or key_tensor is None:
+            return None
+
+        v = key_tensor.numpy() if isinstance(key_tensor, torch.Tensor) else key_tensor
         v = np.squeeze(v, axis=0) if self.channel else v
         v = v.transpose() if transpose else v
 
@@ -722,7 +841,11 @@ class TransformCtx:
         from monai.transforms.utils import scale_affine
 
         bidx = self.bidx % len(self.d) if isinstance(self.d, list) else -1
-        key_tensor = self.d[bidx][key] if bidx >= 0 else self.d[key]
+        d = self.d[bidx] if bidx >= 0 else self.d
+        if d.get(key) is None:
+            return None
+
+        key_tensor = d[key]
         actual_shape = key_tensor.shape[1:] if self.channel else key_tensor.shape
 
         affine = (

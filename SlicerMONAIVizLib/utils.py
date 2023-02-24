@@ -112,16 +112,18 @@ class MonaiUtils:
         return ClassUtils.get_class_of_subclass(mt, ["Transform", "MapTransform"])
 
     @staticmethod
-    def list_bundles():
+    def list_bundles(auth_token=None):
         from monai.bundle import get_all_bundles_list
 
-        return get_all_bundles_list()
+        return get_all_bundles_list(auth_token=auth_token)
 
     @staticmethod
-    def download_bundle(name, bundle_dir):
-        from monai.bundle import download
+    def download_bundle(name, bundle_dir, auth_token=None):
+        from monai.bundle import download, get_bundle_versions
 
-        download(name, bundle_dir=bundle_dir)
+        # Support 1.1.0 monai (bug) for downloading bundles on Windows (pass specific version)
+        version = get_bundle_versions(name, auth_token=auth_token)["latest_version"]
+        download(name, version=version, bundle_dir=bundle_dir)
 
     @staticmethod
     def transforms_from_bundle(name, bundle_dir):
