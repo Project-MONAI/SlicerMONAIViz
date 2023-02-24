@@ -21,9 +21,8 @@ SlicerMONAIViz currently supports:
 You need to install MONAI and dependencies before using this plugin.
 
 - Open Python Console (View Menu) in 3D Slicer
-- Running following commands
-  - `pip_install('monai')`
-  - `pip_install('nibabel')`
+- Run the following command:
+  - `pip_install("monai[itk,nibabel]")`
 - Restart 3D Slicer
 
 ### Install Plugin in Developer Mode
