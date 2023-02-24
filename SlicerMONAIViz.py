@@ -560,15 +560,17 @@ class SlicerMONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             volumeNode.SetName(os.path.basename(self.ui.imagePathLineEdit.currentPath))
             volumeNode.SetOrigin(origin)
             volumeNode.SetSpacing(spacing)
-            # volumeNode.SetIJKToRASDirections(direction)
+            volumeNode.SetIJKToRASDirections(direction)
 
             l = self.ctx.get_tensor(key=label_key)
             labelNode = None
             if l is not None:
                 labelNode = slicer.util.addVolumeFromArray(l, nodeClassName="vtkMRMLLabelMapVolumeNode")
+                origin, spacing, direction = self.ctx.get_tensor_osd(key=label_key)
                 labelNode.SetName(os.path.basename(self.ui.labelPathLineEdit.currentPath))
                 labelNode.SetOrigin(origin)
                 labelNode.SetSpacing(spacing)
+                labelNode.SetIJKToRASDirections(direction)
             slicer.util.setSliceViewerLayers(volumeNode, label=labelNode, fit=True)
 
             self.ctx.set_next(next_idx, next_exp)
