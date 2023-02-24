@@ -262,9 +262,8 @@ class SlicerMONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         if not version:
             slicer.util.errorDisplay(
                 "MONAI is not installed.\n"
-                "Open Python Console (from View Menu) and run following commands.\n\n"
-                "1. pip_install('monai')\n"
-                "2. pip_install('nibabel')\n\n"
+                "Open Python Console (from View Menu) and run following command:.\n\n"
+                'pip_install("monai[itk,nibabel]")\n\n'
                 "Restart 3D Slicer after installing above packages."
             )
             return
