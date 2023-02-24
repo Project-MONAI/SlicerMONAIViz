@@ -180,8 +180,8 @@ class SlicerMONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.transformTable.setEditTriggers(qt.QTableWidget.NoEditTriggers)
         self.ui.transformTable.setSelectionBehavior(qt.QTableView.SelectRows)
 
-        self.ui.imagePathLineEdit.setCurrentPath("C:/Dataset/Radiology/Task09_Spleen/imagesTr/spleen_2.nii.gz")
-        self.ui.labelPathLineEdit.setCurrentPath("C:/Dataset/Radiology/Task09_Spleen/labelsTr/spleen_2.nii.gz")
+        # self.ui.imagePathLineEdit.setCurrentPath("C:/Dataset/Radiology/Task09_Spleen/imagesTr/spleen_2.nii.gz")
+        # self.ui.labelPathLineEdit.setCurrentPath("C:/Dataset/Radiology/Task09_Spleen/labelsTr/spleen_2.nii.gz")
         self.ui.textEdit.setText("{}")
 
         self.refreshVersion()
