@@ -64,23 +64,38 @@
          </widget>
         </item>
         <item row="1" column="0">
-         <widget class="ctkPathLineEdit" name="imagePathLineEdit"/>
+         <widget class="ctkPathLineEdit" name="imagePathLineEdit">
+          <property name="toolTip">
+           <string>Image path</string>
+          </property>
+         </widget>
         </item>
         <item row="3" column="0">
-         <widget class="ctkPathLineEdit" name="labelPathLineEdit"/>
+         <widget class="ctkPathLineEdit" name="labelPathLineEdit">
+          <property name="toolTip">
+           <string>Label path</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>
      </item>
      <item row="5" column="1" colspan="3">
       <widget class="QComboBox" name="transformsComboBox">
+       <property name="toolTip">
+        <string>Transform to be added via &quot;Add&quot; button</string>
+       </property>
        <property name="editable">
         <bool>true</bool>
        </property>
       </widget>
      </item>
      <item row="4" column="1" colspan="3">
-      <widget class="QComboBox" name="modulesComboBox"/>
+      <widget class="QComboBox" name="modulesComboBox">
+       <property name="toolTip">
+        <string>List of MONAI modules</string>
+       </property>
+      </widget>
      </item>
      <item row="1" column="0" colspan="4">
       <widget class="Line" name="line_2">
@@ -113,6 +128,9 @@
            <height>16777215</height>
           </size>
          </property>
+         <property name="toolTip">
+          <string>Add a transform</string>
+         </property>
          <property name="text">
           <string/>
          </property>
@@ -128,6 +146,9 @@
            <width>48</width>
            <height>16777215</height>
           </size>
+         </property>
+         <property name="toolTip">
+          <string>Edit a transform</string>
          </property>
          <property name="text">
           <string/>
@@ -145,6 +166,9 @@
            <height>16777215</height>
           </size>
          </property>
+         <property name="toolTip">
+          <string>Remove a transform</string>
+         </property>
          <property name="text">
           <string/>
          </property>
@@ -160,6 +184,9 @@
            <width>48</width>
            <height>16777215</height>
           </size>
+         </property>
+         <property name="toolTip">
+          <string>Move up in the list</string>
          </property>
          <property name="text">
           <string>↑</string>
@@ -177,6 +204,9 @@
            <height>16777215</height>
           </size>
          </property>
+         <property name="toolTip">
+          <string>Move down in the list</string>
+         </property>
          <property name="text">
           <string>↓</string>
          </property>
@@ -193,6 +223,9 @@
            <height>16777215</height>
           </size>
          </property>
+         <property name="toolTip">
+          <string>Run transform</string>
+         </property>
          <property name="text">
           <string/>
          </property>
@@ -205,6 +238,9 @@
            <width>48</width>
            <height>16777215</height>
           </size>
+         </property>
+         <property name="toolTip">
+          <string>Preview the trasform</string>
          </property>
          <property name="text">
           <string/>
@@ -221,6 +257,9 @@
            <width>48</width>
            <height>16777215</height>
           </size>
+         </property>
+         <property name="toolTip">
+          <string>Clear a transform</string>
          </property>
          <property name="text">
           <string/>
@@ -257,6 +296,9 @@
      </item>
      <item row="7" column="0" colspan="3">
       <widget class="QTableWidget" name="transformTable">
+       <property name="toolTip">
+        <string>The list of transforms</string>
+       </property>
        <property name="sortingEnabled">
         <bool>true</bool>
        </property>
