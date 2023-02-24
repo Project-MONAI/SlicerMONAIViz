@@ -13,6 +13,7 @@ import inspect
 import os
 from typing import Any
 
+
 class ClassUtils:
     @staticmethod
     def is_subclass(n, o, base_c):
@@ -93,6 +94,7 @@ class ClassUtils:
             return kwargs
 
         return eval("foo(" + exp + ")")
+
 
 class MonaiUtils:
     @staticmethod

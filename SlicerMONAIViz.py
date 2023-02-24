@@ -277,7 +277,6 @@ class SlicerMONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.modulesComboBox.setCurrentIndex(idx)
         # self.onSelectModule(self.ui.modulesComboBox.currentText)
 
-
     def onImportBundle(self):
         if not self.ui.monaiVersionComboBox.currentText:
             return
