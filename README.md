@@ -29,5 +29,5 @@ You need to install MONAI and dependencies before using this plugin.
 
 - `git clone git@github.com:Project-MONAI/SlicerMONAIViz.git`
 - Open 3D Slicer: Go to **Edit** -> **Application Settings** -> **Modules** -> **Additional Module Paths**
-- Add New Module Path: _<FULL_PATH>_/plugins/slicer/SlicerMONAIViz
+- Add New Module Path: _<FULL_PATH>_/SlicerMONAIViz
 - _**Restart**_ 3D Slicer
