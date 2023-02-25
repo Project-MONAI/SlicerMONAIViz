@@ -31,15 +31,15 @@ class MONAIViz(ScriptedLoadableModule):
         ScriptedLoadableModule.__init__(self, parent)
 
         self.parent.title = "MONAIViz"
-        self.parent.categories = ["MONAI"]
+        self.parent.categories = ["MONAI", "Developer Tools"]
         self.parent.dependencies = []
-        self.parent.contributors = ["NVIDIA"]
+        self.parent.contributors = ["MONAI Consortium"]
         self.parent.helpText = """
 This extension helps to run chain of MONAI transforms and visualize every stage over an image/label.
 See more information in <a href="https://github.com/Project-MONAI/MONAILabel">module documentation</a>.
 """
         self.parent.acknowledgementText = """
-Developed by NVIDIA
+Developed by MONAI Consortium
 """
 
         # Additional initialization step after application startup is complete
