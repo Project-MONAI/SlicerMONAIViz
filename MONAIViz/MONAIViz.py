@@ -24,10 +24,10 @@ import vtk
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 
-from SlicerMONAIVizLib import ClassUtils, MonaiUtils
+from MONAIVizLib import ClassUtils, MonaiUtils
 
 
-class SlicerMONAIViz(ScriptedLoadableModule):
+class MONAIViz(ScriptedLoadableModule):
     def __init__(self, parent):
         ScriptedLoadableModule.__init__(self, parent)
 
@@ -48,11 +48,11 @@ Developed by NVIDIA
 
     def initializeAfterStartup(self):
         if not slicer.app.commandOptions().noMainWindow:
-            self.settingsPanel = SlicerMONAIVizSettingsPanel()
+            self.settingsPanel = MONAIVizSettingsPanel()
             slicer.app.settingsDialog().addPanel("MONAIViz", self.settingsPanel)
 
 
-class _ui_SlicerMONAIVizSettingsPanel:
+class _ui_MONAIVizSettingsPanel:
     def __init__(self, parent):
         vBoxLayout = qt.QVBoxLayout(parent)
 
@@ -66,7 +66,7 @@ class _ui_SlicerMONAIVizSettingsPanel:
         bundleAuthToken.toolTip = "Auth Token for bundles to download from MONAI Model Zoo"
         groupLayout.addRow("Bundle Auth Token:", bundleAuthToken)
         parent.registerProperty(
-            "SlicerMONAIViz/bundleAuthToken", bundleAuthToken, "text", str(qt.SIGNAL("textChanged(QString)"))
+            "MONAIViz/bundleAuthToken", bundleAuthToken, "text", str(qt.SIGNAL("textChanged(QString)"))
         )
 
         transformsPath = qt.QLineEdit()
@@ -74,7 +74,7 @@ class _ui_SlicerMONAIVizSettingsPanel:
         transformsPath.toolTip = "Transforms Search Path"
         groupLayout.addRow("Transforms Search Path:", transformsPath)
         parent.registerProperty(
-            "SlicerMONAIViz/transformsPath", transformsPath, "text", str(qt.SIGNAL("textChanged(QString)"))
+            "MONAIViz/transformsPath", transformsPath, "text", str(qt.SIGNAL("textChanged(QString)"))
         )
 
         fileExtension = qt.QLineEdit()
@@ -82,39 +82,39 @@ class _ui_SlicerMONAIVizSettingsPanel:
         fileExtension.toolTip = "Default extension for uploading images/labels"
         groupLayout.addRow("File Extension:", fileExtension)
         parent.registerProperty(
-            "SlicerMONAIViz/fileExtension", fileExtension, "text", str(qt.SIGNAL("textChanged(QString)"))
+            "MONAIViz/fileExtension", fileExtension, "text", str(qt.SIGNAL("textChanged(QString)"))
         )
 
         imageKey = qt.QLineEdit()
         imageKey.setText("image")
         imageKey.toolTip = "Image Key in Dictionary"
         groupLayout.addRow("Image Key:", imageKey)
-        parent.registerProperty("SlicerMONAIViz/imageKey", imageKey, "text", str(qt.SIGNAL("textChanged(QString)")))
+        parent.registerProperty("MONAIViz/imageKey", imageKey, "text", str(qt.SIGNAL("textChanged(QString)")))
 
         labelKey = qt.QLineEdit()
         labelKey.setText("label")
         labelKey.toolTip = "Label Key in Dictionary"
         groupLayout.addRow("Label Key:", labelKey)
-        parent.registerProperty("SlicerMONAIViz/labelKey", labelKey, "text", str(qt.SIGNAL("textChanged(QString)")))
+        parent.registerProperty("MONAIViz/labelKey", labelKey, "text", str(qt.SIGNAL("textChanged(QString)")))
 
         bufferArgs = qt.QLineEdit()
         bufferArgs.setInputMask("00")
         bufferArgs.setText("15")
         bufferArgs.toolTip = "Buffer/Extra Args for each Transform while adding/editing"
         groupLayout.addRow("Buffer Args:", bufferArgs)
-        parent.registerProperty("SlicerMONAIViz/bufferArgs", bufferArgs, "text", str(qt.SIGNAL("textChanged(QString)")))
+        parent.registerProperty("MONAIViz/bufferArgs", bufferArgs, "text", str(qt.SIGNAL("textChanged(QString)")))
 
         vBoxLayout.addWidget(groupBox)
         vBoxLayout.addStretch(1)
 
 
-class SlicerMONAIVizSettingsPanel(ctk.ctkSettingsPanel):
+class MONAIVizSettingsPanel(ctk.ctkSettingsPanel):
     def __init__(self, *args, **kwargs):
         ctk.ctkSettingsPanel.__init__(self, *args, **kwargs)
-        self.ui = _ui_SlicerMONAIVizSettingsPanel(self)
+        self.ui = _ui_MONAIVizSettingsPanel(self)
 
 
-class SlicerMONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
+class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     """Uses ScriptedLoadableModuleWidget base class, available at:
     https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/ScriptedLoadableModule.py
     """
@@ -137,12 +137,12 @@ class SlicerMONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     def setup(self):
         ScriptedLoadableModuleWidget.setup(self)
 
-        uiWidget = slicer.util.loadUI(self.resourcePath("UI/SlicerMONAIViz.ui"))
+        uiWidget = slicer.util.loadUI(self.resourcePath("UI/MONAIViz.ui"))
         self.layout.addWidget(uiWidget)
         self.ui = slicer.util.childWidgetVariables(uiWidget)
         uiWidget.setMRMLScene(slicer.mrmlScene)
 
-        self.logic = SlicerMONAIVizLogic()
+        self.logic = MONAIVizLogic()
 
         # Connections
         self.addObserver(slicer.mrmlScene, slicer.mrmlScene.StartCloseEvent, self.onSceneStartClose)
@@ -274,7 +274,7 @@ class SlicerMONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.refreshTransforms()
 
         # bundle names
-        auth_token = slicer.util.settingsValue("SlicerMONAIViz/bundleAuthToken", "")
+        auth_token = slicer.util.settingsValue("MONAIViz/bundleAuthToken", "")
         auth_token = auth_token if auth_token else None
         bundles = MonaiUtils.list_bundles(auth_token=auth_token)
 
@@ -290,7 +290,7 @@ class SlicerMONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         if not self.ui.monaiVersionComboBox.currentText:
             return
 
-        module = slicer.util.settingsValue("SlicerMONAIViz/transformsPath", "monai.transforms")
+        module = slicer.util.settingsValue("MONAIViz/transformsPath", "monai.transforms")
         print(f"Refreshing Transforms for module: {module}")
         self.transforms = MonaiUtils.list_transforms(module)
 
@@ -319,7 +319,7 @@ class SlicerMONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                 qt.QApplication.setOverrideCursor(qt.Qt.WaitCursor)
 
                 print(f"Downloading {name} to {bundle_dir}")
-                auth_token = slicer.util.settingsValue("SlicerMONAIViz/bundleAuthToken", "")
+                auth_token = slicer.util.settingsValue("MONAIViz/bundleAuthToken", "")
                 auth_token = auth_token if auth_token else None
                 MonaiUtils.download_bundle(name, bundle_dir, auth_token=auth_token)
             finally:
@@ -416,7 +416,7 @@ class SlicerMONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             if not found:
                 fp.write(f'<p>Visit <a href="{doc_url}">MONAI Docs</a> for more information</p>')
 
-        buffer_rows = int(slicer.util.settingsValue("SlicerMONAIViz/bufferArgs", "15"))
+        buffer_rows = int(slicer.util.settingsValue("MONAIViz/bufferArgs", "15"))
         dlg = CustomDialog(self.resourcePath, name, ClassUtils.expression_to_args(exp), doc_section, buffer_rows)
         dlg.exec()
         os.unlink(doc_section)
@@ -488,8 +488,8 @@ class SlicerMONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         label = self.ui.labelPathLineEdit.currentPath
         additional = json.loads(self.ui.textEdit.toPlainText())
 
-        image_key = slicer.util.settingsValue("SlicerMONAIViz/imageKey", "image")
-        label_key = slicer.util.settingsValue("SlicerMONAIViz/labelKey", "label")
+        image_key = slicer.util.settingsValue("MONAIViz/imageKey", "image")
+        label_key = slicer.util.settingsValue("MONAIViz/labelKey", "label")
 
         d = {image_key: image, **additional}
         if label:
@@ -511,8 +511,8 @@ class SlicerMONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         if current_row < 0:
             return
 
-        image_key = slicer.util.settingsValue("SlicerMONAIViz/imageKey", "image")
-        label_key = slicer.util.settingsValue("SlicerMONAIViz/labelKey", "label")
+        image_key = slicer.util.settingsValue("MONAIViz/imageKey", "image")
+        label_key = slicer.util.settingsValue("MONAIViz/labelKey", "label")
 
         try:
             qt.QApplication.setOverrideCursor(qt.Qt.WaitCursor)
@@ -729,7 +729,7 @@ class TransformDictDialog(qt.QDialog):
         tree.insertTopLevelItems(0, items)
 
 
-class SlicerMONAIVizLogic(ScriptedLoadableModuleLogic):
+class MONAIVizLogic(ScriptedLoadableModuleLogic):
     def __init__(self):
         ScriptedLoadableModuleLogic.__init__(self)
 
@@ -748,15 +748,15 @@ class SlicerMONAIVizLogic(ScriptedLoadableModuleLogic):
         logging.info(f"Processing completed in {stopTime - startTime:.2f} seconds")
 
 
-class SlicerMONAIVizTest(ScriptedLoadableModuleTest):
+class MONAIVizTest(ScriptedLoadableModuleTest):
     def setUp(self):
         slicer.mrmlScene.Clear()
 
     def runTest(self):
         self.setUp()
-        self.test_SlicerMONAIViz1()
+        self.test_MONAIViz1()
 
-    def test_SlicerMONAIViz1(self):
+    def test_MONAIViz1(self):
         self.delayDisplay("Starting the test")
         self.delayDisplay("Test passed")
 

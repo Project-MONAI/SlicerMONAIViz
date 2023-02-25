@@ -1,33 +1,27 @@
-#-----------------------------------------------------------------------------
-set(MODULE_NAME SlicerMONAIViz)
+cmake_minimum_required(VERSION 3.16.3...3.19.7 FATAL_ERROR)
+
+project(MONAIViz)
 
 #-----------------------------------------------------------------------------
-set(MODULE_PYTHON_SCRIPTS
-  ${MODULE_NAME}.py
-  ${MODULE_NAME}Lib/__init__.py
-  ${MODULE_NAME}Lib/utils.py
-  )
-
-set(MODULE_PYTHON_RESOURCES
-  Resources/Icons/${MODULE_NAME}.png
-  Resources/UI/${MODULE_NAME}.ui
-  )
+# Extension meta-information
+set(EXTENSION_HOMEPAGE "https://github.com/Project-MONAI/SlicerMONAIViz#slicermonaiviz")
+set(EXTENSION_CATEGORY "Active Learning")
+set(EXTENSION_CONTRIBUTORS "NVIDIA")
+set(EXTENSION_DESCRIPTION "This extension helps to run chain of MONAI transforms and visualize every stage over an image/label. See more information in <a href=\"https://github.com/Project-MONAI/MONAILabel\">module documentation")
+set(EXTENSION_ICONURL "https://github.com/Project-MONAI/SlicerMONAIViz/MONAIViz/Resources/Icons/MONAIViz.png")
+set(EXTENSION_SCREENSHOTURLS "https://github.com/Project-MONAI/SlicerMONAIViz/raw/main/Screenshots/1.jpg https://github.com/Project-MONAI/SlicerMONAIViz/raw/main/Screenshots/2.jpg https://github.com/Project-MONAI/SlicerMONAIViz/raw/main/Screenshots/3.jpg https://github.com/Project-MONAI/SlicerMONAIViz/raw/main/Screenshots/4.jpg")
+set(EXTENSION_DEPENDS "NA") # Specified as a list or "NA" if no dependencies
 
 #-----------------------------------------------------------------------------
-slicerMacroBuildScriptedModule(
-  NAME ${MODULE_NAME}
-  SCRIPTS ${MODULE_PYTHON_SCRIPTS}
-  RESOURCES ${MODULE_PYTHON_RESOURCES}
-  WITH_GENERIC_TESTS
-  )
+# Extension dependencies
+find_package(Slicer REQUIRED)
+include(${Slicer_USE_FILE})
 
 #-----------------------------------------------------------------------------
-if(BUILD_TESTING)
+# Extension modules
+add_subdirectory(MONAIViz)
+## NEXT_MODULE
 
-  # Register the unittest subclass in the main script as a ctest.
-  # Note that the test will also be available at runtime.
-  slicer_add_python_unittest(SCRIPT ${MODULE_NAME}.py)
-
-  # Additional build-time testing
-  add_subdirectory(Testing)
-endif()
+#-----------------------------------------------------------------------------
+include(${Slicer_EXTENSION_GENERATE_CONFIG})
+include(${Slicer_EXTENSION_CPACK})
