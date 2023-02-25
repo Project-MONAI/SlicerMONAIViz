@@ -5,8 +5,8 @@ project(MONAIViz)
 #-----------------------------------------------------------------------------
 # Extension meta-information
 set(EXTENSION_HOMEPAGE "https://github.com/Project-MONAI/SlicerMONAIViz#slicermonaiviz")
-set(EXTENSION_CATEGORY "Active Learning")
-set(EXTENSION_CONTRIBUTORS "NVIDIA")
+set(EXTENSION_CATEGORY "Developer Tools")
+set(EXTENSION_CONTRIBUTORS "MONAI Consortium")
 set(EXTENSION_DESCRIPTION "This extension helps to run chain of MONAI transforms and visualize every stage over an image/label. See more information in <a href=\"https://github.com/Project-MONAI/MONAILabel\">module documentation")
 set(EXTENSION_ICONURL "https://github.com/Project-MONAI/SlicerMONAIViz/MONAIViz/Resources/Icons/MONAIViz.png")
 set(EXTENSION_SCREENSHOTURLS "https://github.com/Project-MONAI/SlicerMONAIViz/raw/main/Screenshots/1.jpg https://github.com/Project-MONAI/SlicerMONAIViz/raw/main/Screenshots/2.jpg https://github.com/Project-MONAI/SlicerMONAIViz/raw/main/Screenshots/3.jpg https://github.com/Project-MONAI/SlicerMONAIViz/raw/main/Screenshots/4.jpg")
