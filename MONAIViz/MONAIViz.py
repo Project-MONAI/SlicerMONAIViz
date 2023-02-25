@@ -21,10 +21,9 @@ import qt
 import requests
 import slicer
 import vtk
+from MONAIVizLib import ClassUtils, MonaiUtils
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
-
-from MONAIVizLib import ClassUtils, MonaiUtils
 
 
 class MONAIViz(ScriptedLoadableModule):
@@ -81,9 +80,7 @@ class _ui_MONAIVizSettingsPanel:
         fileExtension.setText(".nii.gz")
         fileExtension.toolTip = "Default extension for uploading images/labels"
         groupLayout.addRow("File Extension:", fileExtension)
-        parent.registerProperty(
-            "MONAIViz/fileExtension", fileExtension, "text", str(qt.SIGNAL("textChanged(QString)"))
-        )
+        parent.registerProperty("MONAIViz/fileExtension", fileExtension, "text", str(qt.SIGNAL("textChanged(QString)")))
 
         imageKey = qt.QLineEdit()
         imageKey.setText("image")

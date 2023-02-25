@@ -25,7 +25,7 @@ set(MODULE_PYTHON_RESOURCES
   Resources/Icons/MONAI.png
   Resources/UI/${MODULE_NAME}.ui
   Resources/UI/MONAITransformDialog.ui
-  Resources/UI/MONAIDictionaryDialog.ui 
+  Resources/UI/MONAIDictionaryDialog.ui
   )
 
 #-----------------------------------------------------------------------------
