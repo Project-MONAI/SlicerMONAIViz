@@ -1,6 +1,6 @@
 # MONAIViz
 
-## MONAI Developer Plugin for 3D Slicer
+MONAIViz is an extension for 3D Slicer that helps to run chain of MONAI transforms and visualize every stage over an image/label.
 
 MONAIViz currently supports:
 - import pre-processing definitions for available bundles from MONAI model zoo
