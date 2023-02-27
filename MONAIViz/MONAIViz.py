@@ -567,6 +567,7 @@ class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             volumeNode.SetOrigin(origin)
             volumeNode.SetSpacing(spacing)
             volumeNode.SetIJKToRASDirections(direction)
+            # logging.info(f"Volume direction: {direction}")
 
             l = self.ctx.get_tensor(key=label_key)
             labelNode = None
@@ -577,6 +578,7 @@ class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                 labelNode.SetOrigin(origin)
                 labelNode.SetSpacing(spacing)
                 labelNode.SetIJKToRASDirections(direction)
+                # logging.info(f"Label direction: {direction}")
             slicer.util.setSliceViewerLayers(volumeNode, label=labelNode, fit=True)
 
             self.ctx.set_next(next_idx, next_exp)
@@ -861,8 +863,8 @@ class TransformCtx:
             else key_tensor.affine.numpy()
         )
 
-        convert_aff_mat = np.diag([-1, -1, 1, 1])
-        affine = convert_aff_mat @ affine
+        # convert_aff_mat = np.diag([-1, -1, 1, 1])  # RAS <-> LPS conversion matrix
+        # affine = convert_aff_mat @ affine  # convert from RAS to LPS
 
         dim = affine.shape[0] - 1
         _origin_key = (slice(-1), -1)
