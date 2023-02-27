@@ -98,15 +98,6 @@ class ClassUtils:
 
 class MonaiUtils:
     @staticmethod
-    def version():
-        try:
-            import monai
-
-            return monai.__version__
-        except ImportError:
-            return ""
-
-    @staticmethod
     def list_transforms(module="monai.transforms"):
         mt = importlib.import_module(module)
         return ClassUtils.get_class_of_subclass(mt, ["Transform", "MapTransform"])
