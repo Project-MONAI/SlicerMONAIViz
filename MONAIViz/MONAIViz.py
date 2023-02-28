@@ -17,6 +17,7 @@ import tempfile
 from io import StringIO
 
 import ctk
+import PyTorchUtils
 import qt
 import requests
 import slicer
@@ -255,15 +256,8 @@ class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         print("Refreshing Version...")
 
         self.ui.monaiVersionComboBox.clear()
-        version = MonaiUtils.version()
-        if not version:
-            slicer.util.errorDisplay(
-                "MONAI is not installed.\n"
-                "Open Python Console (from View Menu) and run following command:.\n\n"
-                'pip_install("monai[itk,nibabel]")\n\n'
-                "Restart 3D Slicer after installing above packages."
-            )
-            return
+        monai = self.logic.importMONAI()
+        version = monai.__version__
 
         self.ui.monaiVersionComboBox.addItem(version)
         self.ui.monaiVersionComboBox.setCurrentText(version)
@@ -740,6 +734,7 @@ class TransformDictDialog(qt.QDialog):
 class MONAIVizLogic(ScriptedLoadableModuleLogic):
     def __init__(self):
         ScriptedLoadableModuleLogic.__init__(self)
+        self.torchLogic = PyTorchUtils.PyTorchUtilsLogic()
 
     def setDefaultParameters(self, parameterNode):
         # if not parameterNode.GetParameter("Threshold"):
@@ -754,6 +749,39 @@ class MONAIVizLogic(ScriptedLoadableModuleLogic):
 
         stopTime = time.time()
         logging.info(f"Processing completed in {stopTime - startTime:.2f} seconds")
+
+    def importMONAI(self):
+        if not self.torchLogic.torchInstalled():
+            logging.info("PyTorch module not found")
+            torch = self.torchLogic.installTorch(askConfirmation=True)
+            if torch is None:
+                slicer.util.errorDisplay(
+                    "PyTorch needs to be installed to use the MONAI extension."
+                    " Please reload this module to install PyTorch."
+                )
+                return None
+        try:
+            import monai
+        except ModuleNotFoundError:
+            with self.showWaitCursor(), self.peakPythonConsole():
+                monai = self.installMONAI()
+        logging.info(f"MONAI {monai.__version__} imported correctly")
+        return monai
+
+    @staticmethod
+    def installMONAI(confirm=True):
+        if confirm and not slicer.app.commandOptions().testingEnabled:
+            install = slicer.util.confirmOkCancelDisplay(
+                "MONAI will be downloaded and installed now. The process might take some minutes."
+            )
+            if not install:
+                logging.info("Installation of MONAI aborted by user")
+                return None
+        slicer.util.pip_install("monai[itk,nibabel,tqdm]")
+        import monai
+
+        logging.info(f"MONAI {monai.__version__} installed correctly")
+        return monai
 
 
 class MONAIVizTest(ScriptedLoadableModuleTest):
