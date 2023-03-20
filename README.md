@@ -22,7 +22,7 @@ The extension provides a single module - **MONAIViz** - which currently supports
 ### Prerequisites
 You need to install MONAI and dependencies before using this plugin.
 
-- Install the ]PyTorch extension](https://github.com/fepegar/SlicerPyTorch)
+- Install the [PyTorch extension](https://github.com/fepegar/SlicerPyTorch)
 - Open Python Console (View Menu) in 3D Slicer
 - Run the following command:
   - `pip_install("monai[itk,nibabel]")`
