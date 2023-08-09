@@ -51,6 +51,17 @@ Developed by MONAI Consortium
             self.settingsPanel = MONAIVizSettingsPanel()
             slicer.app.settingsDialog().addPanel("MONAIViz", self.settingsPanel)
 
+class CheckBox(qt.QCheckBox):
+    def __init__(self, row=0, parent=None):
+        qt.QCheckBox.__init__(self, parent)
+
+        self.row = row
+        self.setChecked(True)
+        #self.connect("clicked(bool, int)",self.clicked)
+        #self.connect("clicked(bool)",self.clicked)
+                
+    #def clicked(self, status, row):
+    #    print("row:", row)
 
 class _ui_MONAIVizSettingsPanel:
     def __init__(self, parent):
@@ -111,7 +122,6 @@ class MONAIVizSettingsPanel(ctk.ctkSettingsPanel):
         ctk.ctkSettingsPanel.__init__(self, *args, **kwargs)
         self.ui = _ui_MONAIVizSettingsPanel(self)
 
-
 class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     """Uses ScriptedLoadableModuleWidget base class, available at:
     https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/ScriptedLoadableModule.py
@@ -151,6 +161,8 @@ class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.removeTransformButton.connect("clicked(bool)", self.onRemoveTransform)
         self.ui.moveUpButton.connect("clicked(bool)", self.onMoveUpTransform)
         self.ui.moveDownButton.connect("clicked(bool)", self.onMoveDownTransform)
+        self.ui.loadTransformButton.connect("clicked(bool)", self.onLoadTransform)
+        self.ui.saveTransformButton.connect("clicked(bool)", self.onSaveTransform)
         self.ui.modulesComboBox.connect("currentIndexChanged(int)", self.onSelectModule)
         self.ui.transformTable.connect("cellClicked(int, int)", self.onSelectTransform)
         self.ui.transformTable.connect("cellDoubleClicked(int, int)", self.onEditTransform)
@@ -169,12 +181,15 @@ class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.runTransformButton.setIcon(self.icon("icons8-red-circle-48.png"))
         self.ui.previewTransformButton.setIcon(self.icon("icons8-preview-48.png"))
         self.ui.clearTransformButton.setIcon(self.icon("icons8-delete-document-48.png"))
+        self.ui.loadTransformButton.setIcon(self.icon("icons8-load-48.png"))
+        self.ui.saveTransformButton.setIcon(self.icon("icons8-save-48.png"))
 
-        headers = ["Status", "Target", "Args"]
+        headers = ["Active", "Status", "Target", "Args"]
         self.ui.transformTable.setColumnCount(len(headers))
         self.ui.transformTable.setHorizontalHeaderLabels(headers)
-        self.ui.transformTable.setColumnWidth(0, 60)
-        self.ui.transformTable.setColumnWidth(1, 200)
+        self.ui.transformTable.setColumnWidth(0, 40)
+        self.ui.transformTable.setColumnWidth(1, 60)
+        self.ui.transformTable.setColumnWidth(2, 160)
         self.ui.transformTable.setEditTriggers(qt.QTableWidget.NoEditTriggers)
         self.ui.transformTable.setSelectionBehavior(qt.QTableView.SelectRows)
 
@@ -332,12 +347,14 @@ class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
             print(f"Importing Transform: {name} => {args}")
             # table.setCellWidget(pos, 0, EditButtonsWidget())
+            box = qt.QCheckBox()
+            table.setCellWidget(box)
             item = qt.QTableWidgetItem()
             item.setIcon(self.icon("icons8-yellow-circle-48.png"))
-            table.setItem(pos, 0, item)
+            table.setItem(pos, 1, item)
 
-            table.setItem(pos, 1, qt.QTableWidgetItem(name))
-            table.setItem(pos, 2, qt.QTableWidgetItem(ClassUtils.args_to_expression(args)))
+            table.setItem(pos, 2, qt.QTableWidgetItem(name))
+            table.setItem(pos, 3, qt.QTableWidgetItem(ClassUtils.args_to_expression(args)))
 
     def onSelectModule(self):
         module = self.ui.modulesComboBox.currentText
@@ -348,6 +365,12 @@ class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.transformsComboBox.clear()
         self.ui.transformsComboBox.addItems(filtered)
 
+    def onBoxClicked(self, clicked, current_row):
+        next_idx = current_row
+        next_exp = self.get_exp(next_idx)
+        self.ctx.set_next(next_idx, next_exp)
+        self.ctx.reset()
+        
     def onSelectTransform(self, row, col):
         selected = True if row >= 0 and self.ui.transformTable.rowCount else False
         self.ui.editTransformButton.setEnabled(selected)
@@ -356,6 +379,7 @@ class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.moveDownButton.setEnabled(selected and row < self.ui.transformTable.rowCount - 1)
         self.ui.runTransformButton.setEnabled(selected)
         self.ui.clearTransformButton.setEnabled(self.ctx.valid())
+        self.ui.saveTransformButton.setEnabled(selected)
 
     def onEditTransform(self, row=-1, col=-1):
         print(f"Selected Transform for Edit: {row}")
@@ -363,8 +387,8 @@ class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         if row < 0:
             return
 
-        name = str(self.ui.transformTable.item(row, 1).text())
-        exp = str(self.ui.transformTable.item(row, 2).text())
+        name = str(self.ui.transformTable.item(row, 2).text())
+        exp = str(self.ui.transformTable.item(row, 3).text())
 
         doc_html = os.path.join(self.tmpdir, "transforms.html")
         doc_url = f"https://docs.monai.io/en/{self.ui.monaiVersionComboBox.currentText}/transforms.html"
@@ -419,7 +443,7 @@ class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             if exp != new_exp:
                 if row < self.ctx.next_idx or row == self.ui.transformTable.rowCount - 1:
                     self.onClearTransform()
-                self.ui.transformTable.item(row, 2).setText(new_exp)
+                self.ui.transformTable.item(row, 3).setText(new_exp)
                 print("Updated for new args...")
 
     def onAddTransform(self):
@@ -440,18 +464,33 @@ class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         self.addTransform(-1, None, t, v)
 
-    def addTransform(self, pos, m, t, v):
+    def addTransform(self, pos, m, t, v, active=True):
         table = self.ui.transformTable
         pos = pos if pos >= 0 else table.rowCount if table.currentRow() < 0 else table.currentRow() + 1
 
         table.insertRow(pos)
+        #box=CheckBox(pos)
         # table.setCellWidget(pos, 0, EditButtonsWidget())
+
+        box = qt.QCheckBox()
+        box.setChecked(active)
+        box.setProperty("row", pos)
+        widget = qt.QWidget()
+        box.connect("clicked(bool)", lambda checked : self.onBoxClicked(checked, box.row))
+        layout = qt.QHBoxLayout(widget)
+        layout.addWidget(box)
+        layout.setAlignment(qt.Qt.AlignCenter)
+        layout.setContentsMargins(0,0,0,0)
+        widget.setLayout(layout)
+
+        table.setCellWidget(pos, 0, widget)
+
         item = qt.QTableWidgetItem()
         item.setIcon(self.icon("icons8-yellow-circle-48.png"))
-        table.setItem(pos, 0, item)
+        table.setItem(pos, 1, item)
 
-        table.setItem(pos, 1, qt.QTableWidgetItem(f"{m}.{t}" if m else t))
-        table.setItem(pos, 2, qt.QTableWidgetItem(v if v else ""))
+        table.setItem(pos, 2, qt.QTableWidgetItem(f"{m}.{t}" if m else t))
+        table.setItem(pos, 3, qt.QTableWidgetItem(v if v else ""))
 
         table.selectRow(pos)
         self.onSelectTransform(pos, 0)
@@ -468,20 +507,22 @@ class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         if row < 0:
             return
 
-        t = str(self.ui.transformTable.item(row, 1).text())
-        v = str(self.ui.transformTable.item(row, 2).text())
+        t = str(self.ui.transformTable.item(row, 2).text())
+        v = str(self.ui.transformTable.item(row, 3).text())
+        active = self.ui.transformTable.cellWidget(row,0).findChild('QCheckBox').isChecked()
         self.onRemoveTransform()
-        self.addTransform(row - 1, None, t, v)
+        self.addTransform(row - 1, None, t, v, active)
 
     def onMoveDownTransform(self):
         row = self.ui.transformTable.currentRow()
         if row < 0:
             return
 
-        t = str(self.ui.transformTable.item(row, 1).text())
-        v = str(self.ui.transformTable.item(row, 2).text())
+        t = str(self.ui.transformTable.item(row, 2).text())
+        v = str(self.ui.transformTable.item(row, 3).text())
+        active = self.ui.transformTable.cellWidget(row,0).findChild('QCheckBox').isChecked()
         self.onRemoveTransform()
-        self.addTransform(row + 1, None, t, v)
+        self.addTransform(row + 1, None, t, v, active)
 
     def prepare_dict(self):
         image = self.ui.imagePathLineEdit.currentPath
@@ -497,8 +538,8 @@ class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         return d
 
     def get_exp(self, row):
-        name = str(self.ui.transformTable.item(row, 1).text())
-        args = str(self.ui.transformTable.item(row, 2).text())
+        name = str(self.ui.transformTable.item(row, 2).text())
+        args = str(self.ui.transformTable.item(row, 3).text())
         return f"monai.transforms.{name}({args})"
 
     def onRunTransform(self):
@@ -508,6 +549,8 @@ class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         current_row = self.ui.transformTable.currentRow()
         print(f"Current Row: {current_row}; Total: {self.ui.transformTable.rowCount}")
+        print(self.ctx.next_idx)
+        print(self.ctx.last_exp)
         if current_row < 0:
             return
 
@@ -523,26 +566,31 @@ class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             d = self.ctx.get_d(current_exp, d=self.prepare_dict())
 
             import monai
-
+            print(current_exp)
             print(monai.__version__)
-
+            
             if self.ctx.last_exp != current_exp:
                 for row in range(self.ctx.next_idx, current_row + 1):
-                    exp = self.get_exp(row)
-                    print("")
-                    print("====================================================================")
-                    print(f"Run:: {exp}")
-                    print("====================================================================")
+                    if self.ui.transformTable.cellWidget(row, 0).findChild('QCheckBox').isChecked():
+                        exp = self.get_exp(row)
+                        print(self.ctx.next_idx,row)
+                        print("")
+                        print("====================================================================")
+                        print(f"Run:: {exp}")
+                        print("====================================================================")
 
-                    t = eval(exp)
-                    if isinstance(d, list):
-                        d = [t(dx) for dx in d]  # Batched Transforms
+                        t = eval(exp)
+                        if isinstance(d, list):
+                            d = [t(dx) for dx in d]  # Batched Transforms
+                        else:
+                            d = t(d)
+
+                        self.ctx.set_d(d, exp, key=image_key)
+                        self.ui.transformTable.item(row, 1).setIcon(self.icon("icons8-green-circle-48.png"))
                     else:
-                        d = t(d)
-
-                    self.ctx.set_d(d, exp, key=image_key)
-                    self.ui.transformTable.item(row, 0).setIcon(self.icon("icons8-green-circle-48.png"))
-
+                        self.ui.transformTable.item(row, 1).setIcon(self.icon("icons8-yellow-circle-48.png"))
+                        continue
+                        
             next_idx = current_row
             next_exp = self.get_exp(next_idx)
             if current_row + 1 < self.ui.transformTable.rowCount:
@@ -551,7 +599,7 @@ class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
                 self.ui.transformTable.selectRow(next_idx)
                 for row in range(next_idx, self.ui.transformTable.rowCount):
-                    self.ui.transformTable.item(row, 0).setIcon(self.icon("icons8-yellow-circle-48.png"))
+                    self.ui.transformTable.item(row, 1).setIcon(self.icon("icons8-yellow-circle-48.png"))
 
             v = self.ctx.get_tensor(key=image_key)
             volumeNode = slicer.util.addVolumeFromArray(v)
@@ -583,14 +631,44 @@ class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     def onClearTransform(self):
         self.ctx.reset()
         for row in range(0, self.ui.transformTable.rowCount):
-            self.ui.transformTable.item(row, 0).setIcon(self.icon("icons8-yellow-circle-48.png"))
+            self.ui.transformTable.item(row, 1).setIcon(self.icon("icons8-yellow-circle-48.png"))
         self.ui.clearTransformButton.setEnabled(self.ctx.valid())
+        
+    def onLoadTransform(self):
+        fname = qt.QFileDialog().getOpenFileName(None, "Select json file to import","","(*.json)") 
+        with open(fname, 'r') as transformFile:
+            transforms = json.load(transformFile)
+            
+        for idx, transform in transforms.items():
+            t = transform['name']
+            v = ""
+
+            if t[-1] == "d":  # this is a dictionary transform
+                # now exclude some transforms whose name happens to end with d
+                if t not in ["AffineGrid", "Decollated", "RandAffineGrid", "RandDeformGrid"]:
+                    v = transform['args']
+
+            self.addTransform(int(idx), None, t, v)    
+
+    def onSaveTransform(self):
+        fname = qt.QFileDialog().getSaveFileName(None, "Save file", "", "json (*.json)")
+        rows = self.ui.transformTable.rowCount
+        table = {}
+        for row in range(rows):
+            name = str(self.ui.transformTable.item(row, 2).text())
+            args = str(self.ui.transformTable.item(row, 3).text())
+            table[row]= {'name': name, 'args': args}
+            
+        with open(fname, 'w') as output:
+            json.dump(table, output)
 
     def onShowDictionary(self):
         dlg = TransformDictDialog(self.ctx.get_d(None, d=self.prepare_dict()), self.resourcePath)
         dlg.exec()
+        
+       
 
-
+    
 class EditButtonsWidget(qt.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -679,7 +757,7 @@ class CustomDialog(qt.QDialog):
 
         self.updatedArgs = args
         self.close()
-
+        
 
 class TransformDictDialog(qt.QDialog):
     def __init__(self, data, resourcePath):
