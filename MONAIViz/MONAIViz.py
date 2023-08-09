@@ -51,18 +51,6 @@ Developed by MONAI Consortium
             self.settingsPanel = MONAIVizSettingsPanel()
             slicer.app.settingsDialog().addPanel("MONAIViz", self.settingsPanel)
 
-class CheckBox(qt.QCheckBox):
-    def __init__(self, row=0, parent=None):
-        qt.QCheckBox.__init__(self, parent)
-
-        self.row = row
-        self.setChecked(True)
-        #self.connect("clicked(bool, int)",self.clicked)
-        #self.connect("clicked(bool)",self.clicked)
-                
-    #def clicked(self, status, row):
-    #    print("row:", row)
-
 class _ui_MONAIVizSettingsPanel:
     def __init__(self, parent):
         vBoxLayout = qt.QVBoxLayout(parent)
@@ -469,7 +457,6 @@ class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         pos = pos if pos >= 0 else table.rowCount if table.currentRow() < 0 else table.currentRow() + 1
 
         table.insertRow(pos)
-        #box=CheckBox(pos)
         # table.setCellWidget(pos, 0, EditButtonsWidget())
 
         box = qt.QCheckBox()
@@ -549,8 +536,6 @@ class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         current_row = self.ui.transformTable.currentRow()
         print(f"Current Row: {current_row}; Total: {self.ui.transformTable.rowCount}")
-        print(self.ctx.next_idx)
-        print(self.ctx.last_exp)
         if current_row < 0:
             return
 
@@ -566,14 +551,12 @@ class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             d = self.ctx.get_d(current_exp, d=self.prepare_dict())
 
             import monai
-            print(current_exp)
             print(monai.__version__)
             
             if self.ctx.last_exp != current_exp:
                 for row in range(self.ctx.next_idx, current_row + 1):
                     if self.ui.transformTable.cellWidget(row, 0).findChild('QCheckBox').isChecked():
                         exp = self.get_exp(row)
-                        print(self.ctx.next_idx,row)
                         print("")
                         print("====================================================================")
                         print(f"Run:: {exp}")
