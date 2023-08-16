@@ -19,14 +19,17 @@ The extension provides a single module - **MONAIViz** - which currently supports
 
 ## Installing Plugin
 
-### Prerequisites
-You need to install MONAI and dependencies before using this plugin.
+### Installing 3D Slicer
 
-- Install the [PyTorch extension](https://github.com/fepegar/SlicerPyTorch)
-- Open Python Console (View Menu) in 3D Slicer
-- Run the following command:
-  - `pip_install("monai[itk,nibabel]")`
-- Restart 3D Slicer
+To use MONAIViz with 3D Slicer, you'll need to download and install 3D Slicer. MONAIViz supports the stable and preview versions of 3D Slicer, version 5.3 or higher. For more information on installing 3D Slicer, check out the [3D Slicer Documentation](https://slicer.readthedocs.io/en/latest/user_guide/getting_started.html#installing-3d-slicer)
+
+### Installing MONAIViz Plugin
+
+- Go to **View** -> **Extension Manager** -> **Developer Tools** -> **MONAIViz**
+- Install MONAIViz plugin
+- _**Restart**_ 3D Slicer
+
+**Note:** To update the plugin to the latest version, you have to uninstall the existing 3D Slicer version and download and install the new preview version of 3D Slicer again
 
 ### Install Plugin in Developer Mode
 
@@ -34,3 +37,12 @@ You need to install MONAI and dependencies before using this plugin.
 - Open 3D Slicer: Go to **Edit** -> **Application Settings** -> **Modules** -> **Additional Module Paths**
 - Add New Module Path: _<FULL_PATH>_/SlicerMONAIViz/MONAIViz
 - _**Restart**_ 3D Slicer
+
+## Dependencies
+
+MONAIViz depends on the following packages:
+
+* [PyTorch Slicer extension](https://github.com/fepegar/SlicerPyTorch)
+* `monai[itk,nibabel]` python packages
+
+**Note:** After opening the MONAIViz module in 3D Slicer for the first time, you will be asked to confirm the installation of the packages.
