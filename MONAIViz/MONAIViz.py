@@ -338,7 +338,7 @@ class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             print(f"Importing Transform: {name} => {args}")
             # table.setCellWidget(pos, 0, EditButtonsWidget())
             box = qt.QCheckBox()
-            table.setCellWidget(box)
+            table.setCellWidget(pos, 0, box)
             item = qt.QTableWidgetItem()
             item.setIcon(self.icon("icons8-yellow-circle-48.png"))
             table.setItem(pos, 1, item)
