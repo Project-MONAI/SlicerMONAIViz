@@ -383,10 +383,10 @@ class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         doc_html = os.path.join(self.tmpdir, "transforms.html")
         doc_url = f"https://docs.monai.io/en/{self.ui.monaiVersionComboBox.currentText}/transforms.html"
         if not os.path.exists(doc_html):
-            with open(doc_html, "wb") as fp:
+            with open(doc_html, "wb", encoding="utf-8") as fp:
                 fp.write(requests.get(doc_url).content)
 
-        with open(doc_html) as fp:
+        with open(doc_html, encoding="utf-8") as fp:
             contents = fp.readlines()
 
         doc_section = tempfile.NamedTemporaryFile(suffix=".html").name
@@ -395,7 +395,7 @@ class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         sb = (f'<section id="{short_name}">', f"<section id='{short_name}'>")
         sc = -1
         found = False
-        with open(doc_section, "w") as fp:
+        with open(doc_section, "w", encoding="utf-8") as fp:
             for c in contents:
                 c = c.rstrip()
                 if c in sb:
