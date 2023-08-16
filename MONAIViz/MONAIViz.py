@@ -337,8 +337,20 @@ class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
             print(f"Importing Transform: {name} => {args}")
             # table.setCellWidget(pos, 0, EditButtonsWidget())
+
             box = qt.QCheckBox()
-            table.setCellWidget(box)
+            box.setChecked(True)
+            box.setProperty("row", pos)
+            widget = qt.QWidget()
+            box.connect("clicked(bool)", lambda checked: self.onBoxClicked(checked, box.row))
+            layout = qt.QHBoxLayout(widget)
+            layout.addWidget(box)
+            layout.setAlignment(qt.Qt.AlignCenter)
+            layout.setContentsMargins(0, 0, 0, 0)
+            widget.setLayout(layout)
+
+            table.setCellWidget(pos, 0, widget)
+
             item = qt.QTableWidgetItem()
             item.setIcon(self.icon("icons8-yellow-circle-48.png"))
             table.setItem(pos, 1, item)
@@ -622,31 +634,33 @@ class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     def onLoadTransform(self):
         fname = qt.QFileDialog().getOpenFileName(None, "Select json file to import", "", "(*.json)")
-        with open(fname) as transformFile:
-            transforms = json.load(transformFile)
+        if fname:
+            with open(fname) as transformFile:
+                transforms = json.load(transformFile)
 
-        for idx, transform in transforms.items():
-            t = transform["name"]
-            v = ""
+            for idx, transform in transforms.items():
+                t = transform["name"]
+                v = ""
 
-            if t[-1] == "d":  # this is a dictionary transform
-                # now exclude some transforms whose name happens to end with d
-                if t not in ["AffineGrid", "Decollated", "RandAffineGrid", "RandDeformGrid"]:
-                    v = transform["args"]
+                if t[-1] == "d":  # this is a dictionary transform
+                    # now exclude some transforms whose name happens to end with d
+                    if t not in ["AffineGrid", "Decollated", "RandAffineGrid", "RandDeformGrid"]:
+                        v = transform["args"]
 
-            self.addTransform(int(idx), None, t, v)
+                self.addTransform(int(idx), None, t, v)
 
     def onSaveTransform(self):
         fname = qt.QFileDialog().getSaveFileName(None, "Save file", "", "json (*.json)")
-        rows = self.ui.transformTable.rowCount
-        table = {}
-        for row in range(rows):
-            name = str(self.ui.transformTable.item(row, 2).text())
-            args = str(self.ui.transformTable.item(row, 3).text())
-            table[row] = {"name": name, "args": args}
+        if fname:
+            rows = self.ui.transformTable.rowCount
+            table = {}
+            for row in range(rows):
+                name = str(self.ui.transformTable.item(row, 2).text())
+                args = str(self.ui.transformTable.item(row, 3).text())
+                table[row] = {"name": name, "args": args}
 
-        with open(fname, "w") as output:
-            json.dump(table, output)
+            with open(fname, "w") as output:
+                json.dump(table, output)
 
     def onShowDictionary(self):
         dlg = TransformDictDialog(self.ctx.get_d(None, d=self.prepare_dict()), self.resourcePath)
