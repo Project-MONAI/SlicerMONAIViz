@@ -337,12 +337,12 @@ class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
             print(f"Importing Transform: {name} => {args}")
             # table.setCellWidget(pos, 0, EditButtonsWidget())
-            
+
             box = qt.QCheckBox()
             box.setChecked(True)
             box.setProperty("row", pos)
             widget = qt.QWidget()
-            box.connect("clicked(bool)", lambda checked : self.onBoxClicked(checked, box.row))
+            box.connect("clicked(bool)", lambda checked: self.onBoxClicked(checked, box.row))
             layout = qt.QHBoxLayout(widget)
             layout.addWidget(box)
             layout.setAlignment(qt.Qt.AlignCenter)
@@ -350,7 +350,7 @@ class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             widget.setLayout(layout)
 
             table.setCellWidget(pos, 0, widget)
-            
+
             item = qt.QTableWidgetItem()
             item.setIcon(self.icon("icons8-yellow-circle-48.png"))
             table.setItem(pos, 1, item)
