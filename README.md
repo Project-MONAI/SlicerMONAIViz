@@ -25,14 +25,15 @@ To use MONAIViz with 3D Slicer, you'll need to download and install 3D Slicer. M
 
 ### Installing MONAIViz Plugin
 
-- Go to **View** -> **Extension Manager** -> **Developer Tools** -> **MONAIViz**
+- Go to **View** -> **Extensions Manager** -> **Developer Tools** -> **MONAIViz**
 - Install MONAIViz plugin
 - _**Restart**_ 3D Slicer
 
 **Note:** To update the plugin to the latest version, you have to uninstall the existing 3D Slicer version and download and install the new preview version of 3D Slicer again
 
 ### Install Plugin in Developer Mode
-
+- Make sure [the `PyTorch` utility](https://github.com/fepegar/SlicerPyTorch) is installed via the 3D slicer extensions manager
+- Make sure `monai` is installed (Slicer Python Console: `import pip; pip.main(['install', 'monai[itk, nibabel]'])`)
 - `git clone git@github.com:Project-MONAI/SlicerMONAIViz.git`
 - Open 3D Slicer: Go to **Edit** -> **Application Settings** -> **Modules** -> **Additional Module Paths**
 - Add New Module Path: _<FULL_PATH>_/SlicerMONAIViz/MONAIViz
