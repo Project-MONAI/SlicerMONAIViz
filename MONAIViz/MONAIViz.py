@@ -839,7 +839,7 @@ class MONAIVizLogic(ScriptedLoadableModuleLogic):
         try:
             import monai
         except ModuleNotFoundError:
-            with self.showWaitCursor(), self.peakPythonConsole():
+            with slicer.util.WaitCursor(), slicer.util.displayPythonShell():
                 monai = self.installMONAI()
         logging.info(f"MONAI {monai.__version__} imported correctly")
         return monai
