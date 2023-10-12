@@ -395,7 +395,7 @@ class MONAIVizWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         doc_html = os.path.join(self.tmpdir, "transforms.html")
         doc_url = f"https://docs.monai.io/en/{self.ui.monaiVersionComboBox.currentText}/transforms.html"
         if not os.path.exists(doc_html):
-            with open(doc_html, "wb", encoding="utf-8") as fp:
+            with open(doc_html, "wb") as fp:
                 fp.write(requests.get(doc_url).content)
 
         with open(doc_html, encoding="utf-8") as fp:
@@ -839,7 +839,7 @@ class MONAIVizLogic(ScriptedLoadableModuleLogic):
         try:
             import monai
         except ModuleNotFoundError:
-            with self.showWaitCursor(), self.peakPythonConsole():
+            with slicer.util.WaitCursor(), slicer.util.displayPythonShell():
                 monai = self.installMONAI()
         logging.info(f"MONAI {monai.__version__} imported correctly")
         return monai
